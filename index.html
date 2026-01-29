@@ -2,13 +2,17 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>Electric Bill Management - Download System</title>
+<title>Electric Bill Management System</title>
 
 <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
     .container { width: 98%; max-width: 1100px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    h2 { text-align: center; color: #1e40af; margin-bottom: 5px; }
-    p.subtitle { text-align: center; color: #64748b; margin-bottom: 20px; font-size: 14px; }
+    
+    /* লোগো এবং হেডার সেকশন */
+    .header-area { text-align: center; margin-bottom: 20px; }
+    .logo { width: 80px; height: 80px; margin-bottom: 10px; border-radius: 50%; background: #fff; padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h2 { color: #1e40af; margin: 0; font-size: 28px; }
+    .subtitle { color: #64748b; margin-top: 5px; font-size: 15px; font-weight: bold; }
 
     /* সামারি সেকশন */
     .summary-section { 
@@ -25,44 +29,54 @@
     .box { padding: 15px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .box-total { background: #1e293b; }
     .box-received { background: #0891b2; }
-    .box-return { background: #059669; }
-    .box span { display: block; font-size: 26px; font-weight: bold; margin-top: 5px; }
+    
+    .status-return { background: #059669 !important; } /* সবুজ - ফেরত */
+    .status-due { background: #dc2626 !important; }    /* লাল - বাকি */
+    
+    .box span { display: block; font-size: 24px; font-weight: bold; margin-top: 5px; }
+    .status-text { font-size: 14px; font-weight: normal; }
 
     /* বাটন সেকশন */
     .btn-group { text-align: center; margin-bottom: 20px; }
-    .btn { padding: 12px 25px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; border: none; margin: 5px; color: white; }
+    .btn { padding: 12px 25px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; border: none; margin: 5px; color: white; transition: 0.3s; }
     .btn-add { background: #16a34a; }
     .btn-add:hover { background: #15803d; }
-    .btn-download { background: #ea580c; } /* অরেঞ্জ কালার ডাউনলোড বাটন */
+    .btn-download { background: #ea580c; }
     .btn-download:hover { background: #c2410c; }
 
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th { background: #1e40af; color: #fff; padding: 12px; font-size: 14px; border: 1px solid #1e3a8a; position: sticky; top: 110px; }
+    /* টেবিল ডিজাইন */
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1e40af; color: #fff; padding: 12px; font-size: 14px; border: 1px solid #1e3a8a; position: sticky; top: 110px; z-index: 10; }
     td { border: 1px solid #ddd; padding: 0; text-align: center; }
     
-    input { width: 100%; padding: 12px; font-size: 16px; border: none; outline: none; text-align: center; box-sizing: border-box; }
-    input:focus { background: #fff9c4; }
+    input { width: 100%; padding: 12px; font-size: 16px; border: none; outline: none; text-align: center; box-sizing: border-box; background: transparent; }
+    input:focus { background: #fbbf24 !important; color: #000; font-weight: bold; }
+    
     .amount-input { background: #fffde7; font-weight: bold; }
     .pay-input { background: #f0fdf4; font-weight: bold; }
-    
-    .auto-cell { background: #f8fafc; font-weight: 700; padding: 12px; font-size: 16px; }
-    
-    @media print {
-        .btn-group { display: none; }
-    }
+    .auto-cell { background: #f8fafc; font-weight: 700; padding: 12px; }
+
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-    <h2>Electric Bill Management System</h2>
-    <p class="subtitle">স্মার্ট সার্ভিস চার্জ ও অটোমেটিক এক্সেল ডাউনলোড সিস্টেম</p>
+    <div class="header-area">
+        <img src="https://i.postimg.cc/gjrGLrKt/Picsart-26-01-29-19-41-05-156.png" alt="Logo" class="logo">
+        <h2>Electric Bill Management System</h2>
+        <div class="subtitle">একাধিক বিলের মোট হিসাব এবং বাকি/ফেরত ট্র্যাকার</div>
+    </div>
 
     <div class="summary-section">
         <div class="box box-total">সর্বমোট বিল (চার্জসহ) <span id="totalBillDisplay">0</span></div>
         <div class="box box-received">সর্বমোট জমা টাকা <span id="totalPayDisplay">0</span></div>
-        <div class="box box-return">গ্রাহককে ফেরত দিন <span id="totalReturnDisplay">0</span></div>
+        
+        <div id="statusBox" class="box status-return">
+            <div id="statusLabel" class="status-text">হিসাব শুরু করুন</div>
+            <span id="totalDiffDisplay">0</span>
+        </div>
     </div>
 
     <div class="btn-group">
@@ -76,9 +90,9 @@
                 <th width="5%">নং</th>
                 <th width="20%">বিলের টাকা (Bill)</th>
                 <th width="15%">সার্ভিস চার্জ</th>
-                <th width="25%">মোট বিল (Bill + Service)</th>
+                <th width="25%">মোট বিল (Bill + Charge)</th>
                 <th width="20%">গ্রাহক দিয়েছে (Cash)</th>
-                <th width="15%">অতিরিক্ত/বাকি</th>
+                <th width="15%">ব্যালেন্স</th>
             </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -91,18 +105,18 @@ let serial = 1;
 function addRow(){
     const tbody = document.getElementById("rows");
     const row = document.createElement("tr");
-
     row.innerHTML = `
         <td class="auto-cell">${serial++}</td>
-        <td><input class="amount-input" type="number" oninput="calculate(this)"></td>
+        <td><input class="amount-input nav-input" type="number" oninput="calculate(this)"></td>
         <td class="auto-cell service-val">0</td>
         <td class="auto-cell tlfee-val">0</td>
-        <td><input class="pay-input" type="number" oninput="calculate(this)"></td>
+        <td><input class="pay-input nav-input" type="number" oninput="calculate(this)"></td>
         <td class="auto-cell otr-val">0</td>
     `;
     tbody.appendChild(row);
 }
 
+// শুরুতে ৫০টি রো লোড করা
 for(let i=0; i<50; i++){ addRow(); }
 
 function calculate(el){
@@ -120,11 +134,11 @@ function calculate(el){
     }
     
     const totalFee = billAmount + serviceCharge;
-    const otr = payReceived > 0 ? (payReceived - totalFee) : 0;
+    const balance = payReceived > 0 ? (payReceived - totalFee) : 0;
 
     row.querySelector(".service-val").innerText = serviceCharge;
     row.querySelector(".tlfee-val").innerText = totalFee;
-    row.querySelector(".otr-val").innerText = otr;
+    row.querySelector(".otr-val").innerText = balance;
 
     updateGrandTotal();
 }
@@ -136,53 +150,54 @@ function updateGrandTotal(){
     
     document.getElementById("totalBillDisplay").innerText = totalB;
     document.getElementById("totalPayDisplay").innerText = totalP;
-    const netReturn = totalP - totalB;
-    document.getElementById("totalReturnDisplay").innerText = netReturn > 0 ? netReturn : 0;
+
+    const diff = totalP - totalB;
+    const statusBox = document.getElementById("statusBox");
+    const statusLabel = document.getElementById("statusLabel");
+    const diffDisplay = document.getElementById("totalDiffDisplay");
+
+    if (totalP === 0 && totalB === 0) {
+        statusLabel.innerText = "হিসাব শুরু করুন";
+        statusBox.className = "box box-received";
+        diffDisplay.innerText = "0";
+    } else if (diff < 0) {
+        statusLabel.innerText = "গ্রাহকের কাছে বাকি আছে";
+        statusBox.className = "box status-due";
+        diffDisplay.innerText = Math.abs(diff);
+    } else {
+        statusLabel.innerText = "গ্রাহককে ফেরত দিন";
+        statusBox.className = "box status-return";
+        diffDisplay.innerText = diff;
+    }
 }
 
-// ডাউনলোড ফাংশন
+// কিবোর্ড নেভিগেশন (Arrow Keys & Enter)
+document.addEventListener('keydown', function(e) {
+    const active = document.activeElement;
+    if (!active.classList.contains('nav-input')) return;
+    const inputs = Array.from(document.querySelectorAll('.nav-input'));
+    const index = inputs.indexOf(active);
+    const columns = 2;
+
+    if (e.key === "ArrowUp" && index >= columns) { e.preventDefault(); inputs[index - columns].focus(); }
+    if ((e.key === "ArrowDown" || e.key === "Enter") && index + columns < inputs.length) { e.preventDefault(); inputs[index + columns].focus(); }
+    if (e.key === "ArrowRight" && index + 1 < inputs.length) inputs[index + 1].focus();
+    if (e.key === "ArrowLeft" && index - 1 >= 0) inputs[index - 1].focus();
+});
+
 function downloadData(){
-    let csvData = "\uFEFF"; // UTF-8 BOM for Excel Bengali support
-    csvData += "নং,বিলের টাকা,সার্ভিস চার্জ,মোট বিল (চার্জসহ),গ্রাহক দিয়েছে,অতিরিক্ত/ফেরত\n";
-
-    const rows = document.querySelectorAll("#rows tr");
-    let hasData = false;
-
-    rows.forEach(row => {
+    let csvData = "\uFEFFনং,বিলের টাকা,সার্ভিস চার্জ,মোট বিল,জমা,ব্যালেন্স\n";
+    document.querySelectorAll("#rows tr").forEach(row => {
         const bill = row.querySelector(".amount-input").value;
         if(bill > 0) {
-            hasData = true;
-            const sn = row.cells[0].innerText;
-            const sc = row.querySelector(".service-val").innerText;
-            const total = row.querySelector(".tlfee-val").innerText;
-            const paid = row.querySelector(".pay-input").value || 0;
-            const extra = row.querySelector(".otr-val").innerText;
-            
-            csvData += `${sn},${bill},${sc},${total},${paid},${extra}\n`;
+            csvData += `${row.cells[0].innerText},${bill},${row.querySelector(".service-val").innerText},${row.querySelector(".tlfee-val").innerText},${row.querySelector(".pay-input").value || 0},${row.querySelector(".otr-val").innerText}\n`;
         }
     });
-
-    if(!hasData) {
-        alert("ডাউনলোড করার জন্য আগে বিলে টাকা এন্ট্রি করুন!");
-        return;
-    }
-
-    // সামারি যোগ করা
-    csvData += `\n,,সর্বমোট বিল:, ${document.getElementById("totalBillDisplay").innerText}\n`;
-    csvData += `,,সর্বমোট জমা:, ${document.getElementById("totalPayDisplay").innerText}\n`;
-    csvData += `,,মোট ফেরত:, ${document.getElementById("totalReturnDisplay").innerText}\n`;
-
     const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    const date = new Date().toLocaleDateString().replace(/\//g, "-");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Electricity_Bills_${date}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = `Bill_Summary_${new Date().toLocaleDateString()}.csv`;
     link.click();
-    document.body.removeChild(link);
 }
 </script>
 
